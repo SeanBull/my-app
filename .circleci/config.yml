@@ -68,7 +68,7 @@ jobs:
       - run:
           name: ansible playbook run
           command: |
-            ansible-playbook -i .circleci/ansible/setup.yml
+            ansible-playbook .circleci/ansible/setup.yml
   
 workflows:
   version: 2
