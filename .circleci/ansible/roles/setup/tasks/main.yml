@@ -1,0 +1,48 @@
+---
+- name: Install aptitude using apt
+  apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+- name: Install required system packages
+  apt: name={{ item }} state=latest update_cache=yes
+  loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu bionic stable
+    state: present
+
+- name: Update apt and install docker-ce
+  apt: update_cache=yes name=docker-ce state=latest
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+
+- name: Pull default Docker image
+  docker_image:
+    name: "{{ default_container_image }}"
+    tag: "{{ defualt_container_tag }}"
+    source: pull
+
+# Creates the number of containers defined by the variable create_containers, using values from vars file
+- name: Create default containers
+  docker_container:
+    name: "{{ default_container_name }}"
+    image: "{{ default_container_image }}:{{ defualt_container_tag }}"
+    # command: "{{ default_container_command }}"
+    state: present
+  with_sequence: count={{ create_containers }}
+
+- name: ensure a container is running
+  docker_container:
+    name: my-app
+    state: started
+    image: "seandbull/my-app:0834d9a4212963129759eb1f35c3efd090266ab8"
+    pull: true
+    ports:
+      - "8000:80"
