@@ -86,7 +86,7 @@ workflows:
                 - docker
       - deploy:
           requires:
-            - run-tests
+            - run_tests
           filters: 
             branches: 
               only: 
