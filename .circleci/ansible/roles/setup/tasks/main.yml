@@ -32,7 +32,7 @@
 
 - name: Copying the Directory's contents 
   copy:
-    src: ~/dist/
+    src: ~/
     dest: ~/
     owner: ubuntu
     group: ubuntu      
