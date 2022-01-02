@@ -34,8 +34,11 @@ jobs:
     working_directory: ~/react-app
     docker:
       - image: circleci/node:14.17.6
+    
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints: ["fc:54:cd:b6:ea:2e:8f:2d:52:15:75:8b:ee:47:c1:39"]
       - run:
           name: update-npm
           command: 'sudo npm install -g npm@latest'
