@@ -23,16 +23,16 @@
   pip:
     name: docker
 
-- name: Pull default Docker image
-  docker_image:
-    name: "{{ default_container_image }}"
-    tag: "{{ defualt_container_tag }}"
-    source: pull
+# - name: Pull default Docker image
+#   docker_image:
+#     name: "{{ default_container_image }}"
+#     tag: "{{ defualt_container_tag }}"
+#     source: pull
 
 
 - name: Copying the Directory's contents 
   copy:
-    src: ~/
+    src: ../project/
     dest: ~/
     owner: ubuntu
     group: ubuntu      
