@@ -8,7 +8,7 @@ jobs:
   run_tests:
     working_directory: ~/react-app
     docker:
-      - image: circleci/node:10.16.3
+      - image: circleci/node:14.17.6
     steps:
       - checkout
       - run:
