@@ -107,6 +107,7 @@ jobs:
       - run:
           name: Add service ip to a file
           command: |
+            echo "$(kubectl get services nginx-web-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" 
             echo "$(kubectl get services react-web-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > service.txt
             cat service.txt
       - persist_to_workspace:
@@ -115,6 +116,35 @@ jobs:
             - cluster.txt
             - cluster-old.txt
             - service.txt
+
+      smoke-test:
+      docker:
+        - image: python:3.7-alpine3.11
+      steps:
+        - checkout
+        - attach_workspace:
+            at: /tmp/workspace
+        - run:
+            name: Install dependencies
+            command: |
+              apk add --update curl
+        - run:
+            name: smoke test
+            command: |
+              export URL="http://"$(cat /tmp/workspace/service.txt)":15444"
+              echo $URL
+              
+              # Allow time for the LB to come online and start serving traffic
+              sleep 120
+              if curl ${URL} | grep "Hello World"
+              then
+                echo "Smoke Test Success - Website able to be reached"
+                return 0  
+              else
+                echo "Unable to access Website - LB Not avalible"
+                return 1
+              fi
+
 
 workflows:
   version: 2
@@ -137,3 +167,4 @@ workflows:
             branches:
               only:
                 - main
+      - smoke-test
