@@ -80,28 +80,26 @@ jobs:
     working_directory: /tmp/workspace
     steps:
       - checkout
-      # - run:
-      #     name: store current cluster name
-      #     command: |
-      #       echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > cluster-old.txt
-      #       cat cluster-old.txt
-      # - run:
-      #     name: create new kubernetes cluster
-      #     command: |
-      #       # Updating the cluster name in the Yaml
-      #       # sed -i "s/basic-cluster/udacity-capstone-${CIRCLE_SHA1:0:7}/g" cluster.yml
-      #       sed -i "s/basic-cluster/udacity-capstone-140814a/g" cluster.yml
-      #       eksctl create cluster -f cluster.yml
-      # - run:
-      #     name: store new cluster name
-      #     command: |
-      #       echo "udacity-capstone-${CIRCLE_SHA1:0:7}" > cluster.txt
-      #       cat cluster.txt
+      - run:
+          name: store current cluster name
+          command: |
+            echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > cluster-old.txt
+            cat cluster-old.txt
+      - run:
+          name: create new kubernetes cluster
+          command: |
+            # Updating the cluster name in the Yaml
+            sed -i "s/basic-cluster/udacity-capstone-${CIRCLE_SHA1:0:7}/g" cluster.yml
+            eksctl create cluster -f cluster.yml
+      - run:
+          name: store new cluster name
+          command: |
+            echo "udacity-capstone-${CIRCLE_SHA1:0:7}" > cluster.txt
+            cat cluster.txt
       - run:
           name: Deploy Application on Kubernetes
           command: |
-            # aws eks update-kubeconfig --name "udacity-capstone-${CIRCLE_SHA1:0:7}"
-            aws eks update-kubeconfig --name "udacity-capstone-140814a"
+            aws eks update-kubeconfig --name "udacity-capstone-${CIRCLE_SHA1:0:7}"
             export KUBECONFIG=/root/.kube/config
             kubectl get svc
             kubectl apply -f deployment/
