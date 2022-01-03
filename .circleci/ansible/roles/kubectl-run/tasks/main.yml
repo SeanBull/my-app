@@ -1,0 +1,9 @@
+---
+- name: kubectl run
+  command: minikube kubectl -- run project4 --image={{ default_container_image }}:{{  default_container_tag  }}
+
+- name: list pods
+  command: minikube kubectl -- get pods
+
+- name: open ports
+  command: minikube kubectl -- port-forward project4 8000:80

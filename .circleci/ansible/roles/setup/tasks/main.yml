@@ -36,22 +36,22 @@
     dest: ~/
     owner: ubuntu
     group: ubuntu      
-    mode: 0644
+    mode: 0644s
 
 # Creates the number of containers defined by the variable create_containers, using values from vars file
-- name: Create default containers
-  docker_container:
-    name: "{{ default_container_name }}"
-    image: "{{ default_container_image }}:{{ defualt_container_tag }}"
-    # command: "{{ default_container_command }}"
-    state: present
-  with_sequence: count={{ create_containers }}
+# - name: Create default containers
+#   docker_container:
+#     name: "{{ default_container_name }}"
+#     image: "{{ default_container_image }}:{{ defualt_container_tag }}"
+#     # command: "{{ default_container_command }}"
+#     state: present
+#   with_sequence: count={{ create_containers }}
 
-- name: ensure a container is running
-  docker_container:
-    name: my-app
-    state: started
-    image: "seandbull/my-app:0834d9a4212963129759eb1f35c3efd090266ab8"
-    pull: true
-    ports:
-      - "8000:80"
+# - name: ensure a container is running
+#   docker_container:
+#     name: my-app
+#     state: started
+#     image: "seandbull/my-app:0834d9a4212963129759eb1f35c3efd090266ab8"
+#     pull: true
+#     ports:
+#       - "8000:80"
