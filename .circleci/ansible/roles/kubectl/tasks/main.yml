@@ -3,7 +3,7 @@
   apt:
     upgrade: "yes"
     update_cache: yes
-    
+
 - name: Installing Prerequisites for Kubernetes
   apt: 
     name:
@@ -13,6 +13,11 @@
       - gnupg-agent
       - vim
       - software-properties-common
+    state: present
+
+- name: add Kubernetes apt-key for APT repository
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
 
 - name: Add Kubernetes Repository
