@@ -38,7 +38,8 @@ commands:
             export KUBECONFIG=/root/.kube/config
             kubectl get svc
             kubectl delete -f deployment/
-            eksctl delete cluster my-app-${CIRCLE_SHA1:0:5}
+            # eksctl delete cluster my-app-${CIRCLE_SHA1:0:5}
+            eksctl delete cluster basic-cluster
 
 jobs:
   run_tests:
@@ -100,7 +101,7 @@ jobs:
       - run:
           name: create new
           command: |
-            sed -i "s/cluster-name/my-app-${CIRCLE_SHA1:0:5}/g" cluster.yml
+            sed -i "s/REPLACE/my-app-${CIRCLE_SHA1:0:5}/g" cluster.yml
             eksctl create cluster -f cluster.yml
       - run:
           name: record new
