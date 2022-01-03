@@ -27,6 +27,18 @@ commands:
           command: |
             echo installing awscli
             pip install awscli
+  destroy-stacks:
+    description: Destroy stacks
+    steps:
+      - run:
+          name: Destroy
+          when: on_fail
+          command: |
+            aws eks update-kubeconfig --name="my-app-${CIRCLE_SHA1:0:5}"
+            export KUBECONFIG=/root/.kube/config
+            kubectl get svc
+            kubectl delete -f deployment/
+            eksctl delete cluster my-app-${CIRCLE_SHA1:0:5}
 
 jobs:
   run_tests:
@@ -77,73 +89,104 @@ jobs:
   deploy:
     docker:
       - image: alpine/k8s:1.15.12
-    working_directory: /tmp/workspace
+    working_directory: /temp/workspace
     steps:
       - checkout
       - run:
-          name: store current cluster name
+          name: record current
           command: |
-            echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > cluster-old.txt
-            cat cluster-old.txt
+            echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > previous-cluster.txt
+            cat previous-cluster.txt
       - run:
-          name: create new kubernetes cluster
+          name: create new
           command: |
-            # Updating the cluster name in the Yaml
-            sed -i "s/basic-cluster/udacity-capstone-${CIRCLE_SHA1:0:7}/g" cluster.yml
+            sed -i "s/cluster-name/my-app-${CIRCLE_SHA1:0:5}/g" cluster.yml
             eksctl create cluster -f cluster.yml
       - run:
-          name: store new cluster name
+          name: record new
           command: |
-            echo "udacity-capstone-${CIRCLE_SHA1:0:7}" > cluster.txt
+            echo "my-app-${CIRCLE_SHA1:0:5}" > cluster.txt
             cat cluster.txt
       - run:
           name: Deploy Application on Kubernetes
           command: |
-            aws eks update-kubeconfig --name "udacity-capstone-${CIRCLE_SHA1:0:7}"
+            aws eks update-kubeconfig --name "my-app-${CIRCLE_SHA1:0:5}"
             export KUBECONFIG=/root/.kube/config
             kubectl get svc
             kubectl apply -f deployment/
-            kubectl rollout status deployment react-web-app
+            kubectl rollout status deployment react-my-app
       - run:
-          name: Add service ip to a file
+          name: record service ip for smoke
           command: |
-            echo "$(kubectl get services nginx-web-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" 
-            echo "$(kubectl get services react-web-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > service.txt
-            cat service.txt
+            echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > service.txt
       - persist_to_workspace:
-          root: /tmp/workspace
+          root: /temp/workspace
           paths:
-            - cluster.txt
-            - cluster-old.txt
             - service.txt
+            - cluster.txt
+            - previous-cluster.txt
+      - destroy-stacks
 
-  smoke-test:
+  smoke:
     docker:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
       - attach_workspace:
-          at: /tmp/workspace
+          at: /temp/workspace
       - run:
-          name: Install dependencies
+          name: Install curl
           command: |
-            apk add --update curl
+            apk add curl
       - run:
-          name: smoke test
+          name: run smoke
           command: |
-            export URL="http://"$(cat /tmp/workspace/service.txt)":15444"
-            echo $URL
-
-            # Allow time for the LB to come online and start serving traffic
-            sleep 120
-            if curl ${URL} | grep "Hello World"
+            export serviceURL="cat /temp/workspace/service.txt" 
+            export URL="http://"${serviceURL}":8000"
+            sleep 200
+            if curl ${URL} | grep "Edit"
             then
-              echo "Smoke Test Success - Website able to be reached"
+              echo "port 8000 is routing to our pod at port 80 and is running our react app "
               return 0  
             else
-              echo "Unable to access Website - LB Not avalible"
+              echo "Error - site not reached"
               return 1
             fi
+      - destroy-stacks
+
+  destroy-previous:
+    docker:
+      - image: alpine/k8s:1.15.12
+    working_directory: /temp/workspace
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /temp/workspace
+      - run:
+          name: delete previous
+          command: |
+            OLD=$(cat /tmp/workspace/previous-cluster.txt)
+            if [ -z "$OLD" ]
+            then
+                  echo $OLD " is not found"
+            else
+                  aws eks update-kubeconfig --name="${OLD}"
+                  export KUBECONFIG=/root/.kube/config
+                  kubectl get svc
+                  kubectl delete -f deployment/
+            fi
+      - run:
+          name: Delete prev k8
+          command: |
+            OLD=$(cat /tmp/workspace/previous-cluster.txt)
+            if [ -z "$OLD" ]
+            then
+                  echo $OLD " is not found"
+
+            else
+                  eksctl delete cluster $OLD
+            fi
+      - destroy
 
 workflows:
   version: 2
@@ -158,7 +201,7 @@ workflows:
           filters:
             branches:
               only:
-                - docker
+                - docker-update
       - deploy:
           requires:
             - run_tests
@@ -166,4 +209,9 @@ workflows:
             branches:
               only:
                 - main
-      - smoke-test
+      - smoke:
+          requires:
+            - deploy
+      - destroy-previous:
+          requires:
+            - smoke
