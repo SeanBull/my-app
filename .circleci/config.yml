@@ -186,7 +186,7 @@ jobs:
             else
                   eksctl delete cluster $OLD
             fi
-      - destroy
+      - destroy-stacks
 
 workflows:
   version: 2
