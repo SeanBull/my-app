@@ -64,10 +64,12 @@
 - name: Downloading minikube
   get_url:
     url: https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
-    dest: /root/minikube-latest.x86_64.rpm- name: Installing minkube
+    dest: /root/minikube-latest.x86_64.rpm
+- name: Installing minkube
   yum:
     name: /root/minikube-latest.x86_64.rpm
-    state: present- name: Starting Minikube driver using none
+    state: present
+- name: Starting Minikube driver using none
   command: minkube start --driver=none
 
 - name: conf repo for kubectl
