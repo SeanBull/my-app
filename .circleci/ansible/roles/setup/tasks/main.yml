@@ -4,7 +4,16 @@
 
 - name: Install required system packages
   apt: name={{ item }} state=latest update_cache=yes
-  loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+  loop:
+    [
+      "apt-transport-https",
+      "ca-certificates",
+      "curl",
+      "software-properties-common",
+      "python3-pip",
+      "virtualenv",
+      "python3-setuptools",
+    ]
 
 - name: Add Docker GPG apt Key
   apt_key:
@@ -22,21 +31,20 @@
 - name: Install Docker Module for Python
   pip:
     name: docker
-
 # - name: Pull default Docker image
 #   docker_image:
 #     name: "{{ default_container_image }}"
 #     tag: "{{ defualt_container_tag }}"
 #     source: pull
 
-
-- name: Copying the Directory's contents 
-  copy:
-    src: ~/project/
-    dest: ~/
-    owner: ubuntu
-    group: ubuntu      
-    mode: 0644
+# - name: Copying the Directory's contents
+#   copy:
+#     # src: ~/project/
+#     src: ../../../my-app/
+#     dest: ~/
+#     owner: ubuntu
+#     group: ubuntu
+#     mode: 0644
 # Creates the number of containers defined by the variable create_containers, using values from vars file
 # - name: Create default containers
 #   docker_container:

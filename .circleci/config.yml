@@ -57,24 +57,68 @@ jobs:
           command: npm test
 
 
+  # deploy:
+  #   docker:
+  #     - image: python:3.7-alpine3.11
+  #   steps:
+  #     - checkout
+  #     - default-configuration
+  #     - restore_cache:
+  #         key: dependency-cache-{{ checksum "package.json" }}
+  #     - attach_workspace:
+  #         at: ~/
+  #     - run:
+  #         # name: update s3
+  #         # command: |
+  #         #   tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+  #         #   aws s3 cp dist s3://my-app-udacity-sb --recursive
+  #         name: ansible playbook run
+  #         command: |
+  #           ansible-playbook .circleci/ansible/setup.yml
+
+
+
   deploy:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: alpine/k8s:1.15.12
+    working_directory: /tmp/workspace
     steps:
       - checkout
-      - default-configuration
-      - restore_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-      - attach_workspace:
-          at: ~/
       - run:
-          # name: update s3
-          # command: |
-          #   tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-          #   aws s3 cp dist s3://my-app-udacity-sb --recursive
-          name: ansible playbook run
+          name: store current cluster name
           command: |
-            ansible-playbook .circleci/ansible/setup.yml
+            echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > cluster-old.txt
+            cat cluster-old.txt
+      - run:
+          name: create new kubernetes cluster
+          command: |
+            # Updating the cluster name in the Yaml 
+            sed -i "s/basic-cluster/udacity-capstone-${CIRCLE_SHA1:0:7}/g" cluster.yml
+            eksctl create cluster -f cluster.yml
+        - run:
+            name: store new cluster name
+            command: |
+              echo "udacity-capstone-${CIRCLE_SHA1:0:7}" > cluster.txt
+              cat cluster.txt
+        - run:
+            name: Deploy Application on Kubernetes
+            command: |
+              aws eks update-kubeconfig --name "udacity-capstone-${CIRCLE_SHA1:0:7}"
+              export KUBECONFIG=/root/.kube/config
+              kubectl get svc
+              kubectl apply -f deployment/
+              kubectl rollout status deployment react-web-app
+        - run:
+            name: Add service ip to a file
+            command: |
+              echo "$(kubectl get services react-web-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > service.txt
+              cat service.txt
+        - persist_to_workspace:
+            root: /tmp/workspace
+            paths:
+              - cluster.txt
+              - cluster-old.txt
+              - service.txt
   
 workflows:
   version: 2

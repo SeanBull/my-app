@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: react-web-app-service
+  labels:
+    name: react-web-app
+spec:
+  selector:
+    app: react-web-app
+  ports:
+    - name: http
+      port: 15444
+      targetPort: 80
+  type: LoadBalancer

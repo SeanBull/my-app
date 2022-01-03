@@ -1,6 +1,7 @@
 - name: "setup"
   hosts: web
   user: ubuntu
+  # user: ec2-user
   become: true
   gather_facts: false
   vars_files:
@@ -8,4 +9,3 @@
   roles:
     - setup
     - kubectl
-    - kubectl-run
