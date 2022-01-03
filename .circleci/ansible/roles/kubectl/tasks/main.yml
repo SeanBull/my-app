@@ -1,13 +1,36 @@
 ---
+- name: Installing Prerequisites for Kubernetes
+  apt: 
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - vim
+      - software-properties-common
+    state: present
+
+- name: Add Kubernetes Repository
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main 
+    state: present
+    filename: kubernetes
+    mode: 0600
+
 - name: install kubelet, kubeadm, and kubectl
   apt:
     force_apt_get: yes
     name:
-      # - kubelet
-      # - kubeadm
+      - kubelet
+      - kubeadm
       - kubectl
     state: present
     update_cache: yes
+    
+- name: Enable service kubelet, and enable persistently
+  service: 
+    name: kubelet
+    enabled: yes
 
 - name: configure Kubernetes cgroup driver to match Docker's (cgroupfs)
   lineinfile:
