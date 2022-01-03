@@ -32,7 +32,7 @@
 
 - name: Copying the Directory's contents 
   copy:
-    src: ../project/
+    src: ~/project/
     dest: ~/
     owner: ubuntu
     group: ubuntu      
