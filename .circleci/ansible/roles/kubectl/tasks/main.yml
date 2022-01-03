@@ -1,0 +1,34 @@
+---
+- name: install kubelet, kubeadm, and kubectl
+  apt:
+    force_apt_get: yes
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: yes
+
+- name: configure Kubernetes cgroup driver to match Docker's (cgroupfs)
+  lineinfile:
+    path: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    insertbefore: '^ExecStart'
+    firstmatch: yes
+    line: 'Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"'
+    state: present
+
+- name: reload daemon
+  command: systemctl daemon-reload
+
+- name: restart kubelet
+  command: systemctl restart kubelet
+
+
+- name: kubectl run
+  command: kubectl -- run project4 --image={{ default_container_image }}:{{  defualt_container_tag  }}
+
+- name: list pods
+  command: kubectl -- get pods
+
+- name: open ports
+  command: kubectl -- port-forward project4 8000:80

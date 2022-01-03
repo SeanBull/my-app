@@ -30,14 +30,13 @@
 #     source: pull
 
 
-# - name: Copying the Directory's contents 
-#   copy:
-#     src: ~/project/
-#     dest: ~/
-#     owner: ubuntu
-#     group: ubuntu      
-#     mode: 0644s
-
+- name: Copying the Directory's contents 
+  copy:
+    src: ~/project/
+    dest: ~/
+    owner: ubuntu
+    group: ubuntu      
+    mode: 0644
 # Creates the number of containers defined by the variable create_containers, using values from vars file
 # - name: Create default containers
 #   docker_container:
