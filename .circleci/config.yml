@@ -218,7 +218,7 @@ jobs:
       - run:
           name: delete previous
           command: |
-            OLD=$(cat /tmp/workspace/previous-cluster.txt)
+            OLD=$(cat /etmp/workspace/previous-cluster.txt)
             if [ -z "$OLD" ]
             then
                   echo $OLD " is not found"
@@ -231,7 +231,7 @@ jobs:
       - run:
           name: Delete prev k8
           command: |
-            OLD=$(cat /tmp/workspace/previous-cluster.txt)
+            OLD=$(cat /temp/workspace/previous-cluster.txt)
             if [ -z "$OLD" ]
             then
                   echo $OLD " is not found"
