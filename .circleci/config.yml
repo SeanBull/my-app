@@ -5,6 +5,7 @@ orbs:
 
 commands:
   default-configuration:
+    # default configuration stolen from my previous project that contains everything to set up a node container
     description: preparing the containers with dependencies to deploy front and back end
     steps:
       - run:
@@ -27,6 +28,7 @@ commands:
           command: |
             echo installing awscli
             pip install awscli
+  # A command taht will destroy anny stacks created in this run
   destroy-stacks:
     description: Destroy stacks
     steps:
@@ -38,10 +40,11 @@ commands:
             export KUBECONFIG=/root/.kube/config
             kubectl get svc
             kubectl delete -f my-app-configs/
-            # eksctl delete cluster my-app-${CIRCLE_SHA1:0:5}
             eksctl delete cluster my-app-${CIRCLE_SHA1:0:5}
 
 jobs:
+  # a job that will run our npm test modules on our app
+  # it will also build our dependency cache and add our ssh key for aws
   run_tests:
     working_directory: ~/react-app
     docker:
@@ -69,6 +72,7 @@ jobs:
           command: npm test
 
   run_linting:
+    # a job to run linting on both docker and js
     docker:
       # Use the same Docker base as the project
       - image: node:14.18-alpine
@@ -113,7 +117,7 @@ jobs:
                 echo "There are no JS errors in your application"
                 return 0
             fi
-
+  # old step which would have configured an AWS EC2 to run kubernetes.. but stopped as free teir EC2s did not have enogh vcpus
   # upload_docker_image:
   #   docker:
   #     - image: python:3.7-alpine3.11
@@ -140,20 +144,24 @@ jobs:
     steps:
       - checkout
       - run:
+          # recording the last existing cluster from the cache
           name: record current
           command: |
-            echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > previous-cluster.txt
-            cat previous-cluster.txt
+            echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > previous-kubernetes.txt
+            cat previous-kubernetes.txt
+      #create the new cluster from our cluster yaml file
       - run:
           name: create new
           command: |
-            sed -i "s/REPLACE/my-app-${CIRCLE_SHA1:0:5}/g" cluster.yml
-            eksctl create cluster -f cluster.yml
+            sed -i "s/REPLACE/my-app-${CIRCLE_SHA1:0:5}/g" kubernetes-deploy.yml
+            eksctl create cluster -f kubernetes-deploy.yml
+      #record our new clusters details
       - run:
           name: record new
           command: |
-            echo "my-app-${CIRCLE_SHA1:0:5}" > cluster.txt
-            cat cluster.txt
+            echo "my-app-${CIRCLE_SHA1:0:5}" > kubernetes.txt
+            cat kubernetes.txt
+      #use aws to update cluster
       - run:
           name: Deploy
           command: |
@@ -162,17 +170,17 @@ jobs:
             kubectl get svc
             kubectl apply -f my-app-configs/
             kubectl rollout status deployment react-my-app
+      #record ip for our app access so we can test against it later
       - run:
           name: record service ip for smoke
           command: |
-            echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
-            echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > service.txt
+            echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > ip.txt
       - persist_to_workspace:
           root: /temp/workspace
           paths:
-            - service.txt
-            - cluster.txt
-            - previous-cluster.txt
+            - ip.txt
+            - kubernetes.txt
+            - previous-kubernetes.txt
       - destroy-stacks
 
   smoke:
@@ -184,16 +192,15 @@ jobs:
           at: /temp/workspace
       - default-configuration
       - run:
-          name: Install curl
+          name: get curl
           command: |
             apk add curl
       - run:
-          name: run smoke
+          name: smoke
           command: |
 
-            export serviceURL="$(cat /temp/workspace/service.txt)" 
+            export serviceURL="$(cat /temp/workspace/ip.txt)" 
             export URL="http://"${serviceURL}":8000"
-            echo ${URL}
             sleep 240
 
             if curl ${URL} | grep "Web"
@@ -218,7 +225,7 @@ jobs:
       - run:
           name: delete previous
           command: |
-            OLD=$(cat /etmp/workspace/previous-cluster.txt)
+            OLD=$(cat /temp/workspace/previous-kubernetes.txt)
             if [ -z "$OLD" ]
             then
                   echo $OLD " is not found"
@@ -231,7 +238,7 @@ jobs:
       - run:
           name: Delete prev k8
           command: |
-            OLD=$(cat /temp/workspace/previous-cluster.txt)
+            OLD=$(cat /temp/workspace/previous-kubernetes.txt)
             if [ -z "$OLD" ]
             then
                   echo $OLD " is not found"
@@ -247,14 +254,14 @@ workflows:
       - run_tests
       - run_linting
       - docker/publish:
-          image: seandbull/$CIRCLE_PROJECT_REPONAME
+          image: seandbull/latest
           dockerfile: dockerfile
           requires:
             - run_tests
           filters:
             branches:
               only:
-                - docker-update
+                - main
       - deploy:
           requires:
             - run_tests
