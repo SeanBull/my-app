@@ -37,7 +37,7 @@ commands:
             aws eks update-kubeconfig --name="my-app-${CIRCLE_SHA1:0:5}"
             export KUBECONFIG=/root/.kube/config
             kubectl get svc
-            kubectl delete -f deployment/
+            kubectl delete -f my-app-configs/
             # eksctl delete cluster my-app-${CIRCLE_SHA1:0:5}
             eksctl delete cluster my-app-${CIRCLE_SHA1:0:5}
 
@@ -71,13 +71,12 @@ jobs:
   run_linting:
     docker:
       # Use the same Docker base as the project
-      - image: python:3.7.3-stretch
+      - image: node:14.18-alpine
 
     working_directory: ~/repo
 
     steps:
       - checkout
-
       # Download and cache dependencies
       - restore_cache:
           keys:
@@ -85,24 +84,21 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            make install
-            wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
-            chmod +x /bin/hadolint
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
-
+            sudo npm install -g dockerlint
       # run lint!
       - run:
           name: run lint
           command: |
-            . venv/bin/activate
-            make lint
+            if dockerlint ./dockerfile | grep OK
+              then 
+                echo "docker file contains no innaccuracies"
+                return 0
+              else 
+                echo "linter has found an error in dockerfile"
+                return 1
+            fi
 
-  # deploy:
+  # upload_docker_image:
   #   docker:
   #     - image: python:3.7-alpine3.11
   #   steps:
@@ -148,7 +144,7 @@ jobs:
             aws eks update-kubeconfig --name "my-app-${CIRCLE_SHA1:0:5}"
             export KUBECONFIG=/root/.kube/config
             kubectl get svc
-            kubectl apply -f deployment/
+            kubectl apply -f my-app-configs/
             kubectl rollout status deployment react-my-app
       - run:
           name: record service ip for smoke
@@ -212,7 +208,7 @@ jobs:
                     aws eks update-kubeconfig --name="${OLD}"
                     export KUBECONFIG=/root/.kube/config
                     kubectl get svc
-                    kubectl delete -f deployment/
+                    kubectl delete -f my-app-configs/
             fi
       - run:
           name: Delete prev k8
