@@ -119,6 +119,7 @@ jobs:
       - run:
           name: record service ip for smoke
           command: |
+            echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
             echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > service.txt
       - persist_to_workspace:
           root: /temp/workspace
@@ -135,6 +136,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: /temp/workspace
+      - default-configuration
       - run:
           name: Install curl
           command: |
@@ -144,7 +146,8 @@ jobs:
           command: |
             export serviceURL="$(cat /temp/workspace/service.txt)" 
             export URL="http://"${serviceURL}":8000"
-            sleep 200
+            echo ${URL}
+            sleep 240
             if curl ${URL} | grep "Edit"
             then
               echo "port 8000 is routing to our pod at port 80 and is running our react app "
@@ -163,6 +166,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: /temp/workspace
+      - default-configuration
       - run:
           name: delete previous
           command: |
