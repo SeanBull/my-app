@@ -139,8 +139,8 @@ jobs:
 
   deploy:
     docker:
-      - image: alpine/k8s:1.15.12
-    working_directory: /temp/workspace
+      - image: alpine/k8s:1.16.15
+    working_directory: /persistant-store
     steps:
       - checkout
       - run:
@@ -166,17 +166,22 @@ jobs:
           name: Deploy
           command: |
             aws eks update-kubeconfig --name "my-app-${CIRCLE_SHA1:0:5}"
+            echo "applying config"
             export KUBECONFIG=/root/.kube/config
             kubectl get svc
-            kubectl apply -f my-app-configs/
+            echo "applying config files"
+            kubectl apply -f my-app-configs/react-app-service.yml
+            kubectl apply -f my-app-configs/react-deployment.yml
+            echo "checking rollout status before moving on"
             kubectl rollout status deployment react-my-app
       #record ip for our app access so we can test against it later
       - run:
           name: record service ip for smoke
           command: |
-            echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > ip.txt
+            # echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > ip.txt
+            echo "$(kubectl -n kube-system get svc service-react-my-app -o json | jq -r .status.loadBalancer.ingress.hostname)" > ip.txt
       - persist_to_workspace:
-          root: /temp/workspace
+          root: /persistant-store
           paths:
             - ip.txt
             - kubernetes.txt
@@ -185,11 +190,11 @@ jobs:
 
   smoke:
     docker:
-      - image: alpine/k8s:1.15.12
+      - image: alpine/k8s:1.16.15
     steps:
       - checkout
       - attach_workspace:
-          at: /temp/workspace
+          at: /persistant-store
       - default-configuration
       - run:
           name: get curl
@@ -199,7 +204,7 @@ jobs:
           name: smoke
           command: |
 
-            export serviceURL="$(cat /temp/workspace/ip.txt)" 
+            export serviceURL="$(cat /persistant-store/ip.txt)" 
             export URL="http://"${serviceURL}":8000"
             sleep 240
 
@@ -215,17 +220,18 @@ jobs:
 
   destroy-previous:
     docker:
-      - image: alpine/k8s:1.15.12
-    working_directory: /temp/workspace
+      - image: alpine/k8s:1.16.15
+    working_directory: /persistant-store
     steps:
       - checkout
       - attach_workspace:
-          at: /temp/workspace
+          at: /persistant-store
       - default-configuration
       - run:
           name: delete previous
           command: |
-            OLD=$(cat /temp/workspace/previous-kubernetes.txt)
+            OLD=$(cat /persistant-store/previous-kubernetes.txt)
+            cat /persistant-store/previous-kubernetes.txt
             if [ -z "$OLD" ]
             then
                   echo $OLD " is not found"
@@ -233,13 +239,19 @@ jobs:
                   echo "destroying old eks : " $OLD
                   aws eks update-kubeconfig --name="${OLD}"
                   export KUBECONFIG=/root/.kube/config
+                  echo "updated config"
                   kubectl get svc
-                  kubectl delete -f my-app-configs/
+                  echo "running deletion"
+                  kubectl delete -f my-app-configs/react-app-service.yml
+                  kubectl delete -f my-app-configs/react-deployment.yml
+                  echo "deleted"
             fi
       - run:
           name: Delete prev k8
           command: |
-            OLD=$(cat /temp/workspace/previous-kubernetes.txt)
+            #old is savid in the previous kubernetes file 
+            OLD=$(cat /persistant-store/previous-kubernetes.txt)
+            #this checks if old exists
             if [ -z "$OLD" ]
             then
                   echo $OLD " is not found"
@@ -247,6 +259,7 @@ jobs:
             else
                   echo "destroying old containers : " $OLD
                   eksctl delete cluster $OLD
+                  echo "Deleted"
             fi
 
 workflows:
