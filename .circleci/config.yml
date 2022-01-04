@@ -68,7 +68,6 @@ jobs:
           name: test
           command: npm test
 
-  
   run_linting:
     docker:
       # Use the same Docker base as the project
@@ -246,7 +245,7 @@ workflows:
       - deploy:
           requires:
             - run_tests
-            -run_linting
+            - run_linting
           filters:
             branches:
               only:
