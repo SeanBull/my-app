@@ -85,7 +85,7 @@ jobs:
   #         #   aws s3 cp dist s3://my-app-udacity-sb --recursive
   #         name: ansible playbook run
   #         command: |
-  #           ansible-playbook .circleci/ansible/setup.yml
+  #           ansible-playbook .circleci/ansible/setup.yml da
 
   deploy:
     docker:
