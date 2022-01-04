@@ -230,6 +230,7 @@ jobs:
             then
                   echo $OLD " is not found"
             else
+                  echo "destroying old eks : " $OLD
                   aws eks update-kubeconfig --name="${OLD}"
                   export KUBECONFIG=/root/.kube/config
                   kubectl get svc
@@ -244,6 +245,7 @@ jobs:
                   echo $OLD " is not found"
 
             else
+                  echo "destroying old containers : " $OLD
                   eksctl delete cluster $OLD
             fi
 
