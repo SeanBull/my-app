@@ -174,10 +174,12 @@ jobs:
       - run:
           name: run smoke
           command: |
+
             export serviceURL="$(cat /temp/workspace/service.txt)" 
             export URL="http://"${serviceURL}":8000"
             echo ${URL}
             sleep 240
+
             if curl ${URL} | grep "Web"
             then
               echo "port 8000 is routing to our pod at port 80 and is running our react app "
@@ -186,6 +188,7 @@ jobs:
               echo "Error - site not reached"
               return 1
             fi
+
       - destroy-stacks
 
   destroy-previous:
