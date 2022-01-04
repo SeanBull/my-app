@@ -131,7 +131,7 @@ jobs:
 
   smoke:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: alpine/k8s:1.15.12
     steps:
       - checkout
       - attach_workspace:
@@ -148,7 +148,7 @@ jobs:
             export URL="http://"${serviceURL}":8000"
             echo ${URL}
             sleep 240
-            if curl ${URL} | grep "Edit"
+            if curl ${URL} | grep "Web"
             then
               echo "port 8000 is routing to our pod at port 80 and is running our react app "
               return 0  
