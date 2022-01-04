@@ -253,7 +253,7 @@ workflows:
     jobs:
       - run_tests
       - run_linting
-      # - docker/publish:
+      - docker/publish:
           image: seandbull/my-app
           tag: latest
           dockerfile: dockerfile
