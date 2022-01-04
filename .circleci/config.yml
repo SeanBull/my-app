@@ -258,14 +258,14 @@ workflows:
           dockerfile: dockerfile
           requires:
             - run_tests
+            - run_linting
           filters:
             branches:
               only:
                 - main
       - deploy:
           requires:
-            - run_tests
-            - run_linting
+            - docker/publish
           filters:
             branches:
               only:
