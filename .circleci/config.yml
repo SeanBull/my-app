@@ -179,12 +179,12 @@ jobs:
             echo ${URL}
             sleep 240
             if curl ${URL} | grep "Web"
-              then
-                echo "port 8000 is routing to our pod at port 80 and is running our react app "
-                return 0  
-              else
-                echo "Error - site not reached"
-                return 1
+            then
+              echo "port 8000 is routing to our pod at port 80 and is running our react app "
+              return 0  
+            else
+              echo "Error - site not reached"
+              return 1
             fi
       - destroy-stacks
 
@@ -202,24 +202,24 @@ jobs:
           command: |
             OLD=$(cat /tmp/workspace/previous-cluster.txt)
             if [ -z "$OLD" ]
-              then
-                    echo $OLD " is not found"
-              else
-                    aws eks update-kubeconfig --name="${OLD}"
-                    export KUBECONFIG=/root/.kube/config
-                    kubectl get svc
-                    kubectl delete -f my-app-configs/
+            then
+                  echo $OLD " is not found"
+            else
+                  aws eks update-kubeconfig --name="${OLD}"
+                  export KUBECONFIG=/root/.kube/config
+                  kubectl get svc
+                  kubectl delete -f my-app-configs/
             fi
       - run:
           name: Delete prev k8
           command: |
             OLD=$(cat /tmp/workspace/previous-cluster.txt)
             if [ -z "$OLD" ]
-              then
-                    echo $OLD " is not found"
+            then
+                  echo $OLD " is not found"
 
-              else
-                    eksctl delete cluster $OLD
+            else
+                  eksctl delete cluster $OLD
             fi
       - destroy-stacks
 
