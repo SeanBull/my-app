@@ -142,7 +142,7 @@ jobs:
       - run:
           name: run smoke
           command: |
-            export serviceURL="cat /temp/workspace/service.txt" 
+            export serviceURL="$(cat /temp/workspace/service.txt)" 
             export URL="http://"${serviceURL}":8000"
             sleep 200
             if curl ${URL} | grep "Edit"
