@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: react-my-app
-          image: seandbull/my-app:0834d9a4212963129759eb1f35c3efd090266ab8
+          image: seandbull/latest
           ports:
             - containerPort: 80

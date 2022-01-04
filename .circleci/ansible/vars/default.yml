@@ -1,7 +1,7 @@
 ---
 create_containers: 1
 default_container_name: docker
-default_container_image: seandbull/my-app
+default_container_image: seandbull/latest
 defualt_container_tag: 0834d9a4212963129759eb1f35c3efd090266ab8
 default_container_command: sleep 1d
 ansible_ssh_private_key_file: ~/.ssh/ubuntu-dad.pem
