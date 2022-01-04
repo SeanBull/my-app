@@ -1,5 +1,10 @@
+/* eslint-disable */
 import logo from "./logo.svg";
 import "./App.css";
+/* eslint-enable */
+
+// const logo = require("./logo.svg");
+// const App = require("./App.css");
 
 function App() {
   return (

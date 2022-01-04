@@ -82,12 +82,17 @@ jobs:
           keys:
             - dependency-cache-{{ checksum "package.json" }}
       - run:
-          name: install dependencies
+          name: install docker linter
           command: |
             npm install -g dockerlint
+      - run:
+          name: install js linter
+          command: |
+            npm install eslint --save-dev
+
       # run lint!
       - run:
-          name: run lint
+          name: run docker lint
           command: |
             if dockerlint ./dockerfile | grep OK
               then 
@@ -96,6 +101,18 @@ jobs:
               else 
                 echo "linter has found an error in dockerfile"
                 return 1
+            fi
+      - run:
+          name: run js lint
+          command: |
+            ./node_modules/.bin/eslint --init
+            if ./node_modules/.bin/eslint ./src/App.js | grep error
+              then 
+                echo "javascript code contains error"
+                return 1
+              else 
+                echo "There are no JS errors in your application"
+                return 0
             fi
 
   # upload_docker_image:
@@ -139,7 +156,7 @@ jobs:
             echo "my-app-${CIRCLE_SHA1:0:5}" > cluster.txt
             cat cluster.txt
       - run:
-          name: Deploy Application on Kubernetes
+          name: Deploy
           command: |
             aws eks update-kubeconfig --name "my-app-${CIRCLE_SHA1:0:5}"
             export KUBECONFIG=/root/.kube/config
@@ -223,7 +240,6 @@ jobs:
             else
                   eksctl delete cluster $OLD
             fi
-      - destroy-stacks
 
 workflows:
   version: 2
