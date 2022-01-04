@@ -183,7 +183,6 @@ jobs:
             if curl ${URL} | grep "Web"
             then
               echo "port 8000 is routing to our pod at port 80 and is running our react app "
-              return 0  
             else
               echo "Error - site not reached"
               return 1
