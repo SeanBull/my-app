@@ -71,7 +71,7 @@ jobs:
   run_linting:
     docker:
       # Use the same Docker base as the project
-      - image: node:14.18-alpine
+      - image: python:3.7.3-stretch
 
     working_directory: ~/repo
 
