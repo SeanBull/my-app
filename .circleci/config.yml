@@ -68,6 +68,41 @@ jobs:
           name: test
           command: npm test
 
+  
+  run_linting:
+    docker:
+      # Use the same Docker base as the project
+      - image: node:14.18-alpine
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            make install
+            wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
+            chmod +x /bin/hadolint
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      # run lint!
+      - run:
+          name: run lint
+          command: |
+            . venv/bin/activate
+            make lint
+
   # deploy:
   #   docker:
   #     - image: python:3.7-alpine3.11
@@ -198,6 +233,7 @@ workflows:
   build_deploy:
     jobs:
       - run_tests
+      - run_linting
       - docker/publish:
           image: seandbull/$CIRCLE_PROJECT_REPONAME
           dockerfile: dockerfile
@@ -210,6 +246,7 @@ workflows:
       - deploy:
           requires:
             - run_tests
+            -run_linting
           filters:
             branches:
               only:
