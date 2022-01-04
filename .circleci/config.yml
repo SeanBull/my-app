@@ -253,21 +253,20 @@ workflows:
     jobs:
       - run_tests
       - run_linting
-      # # - docker/publish:
-      #     image: seandbull/my-app
-      #     tag: latest
-      #     dockerfile: dockerfile
-      #     requires:
-      #       - run_tests
-      #       - run_linting
-      #     filters:
-      #       branches:
-      #         only:
-      #           - main
-      - deploy:
+      # - docker/publish:
+          image: seandbull/my-app
+          tag: latest
+          dockerfile: dockerfile
           requires:
             - run_tests
             - run_linting
+          filters:
+            branches:
+              only:
+                - main
+      - deploy:
+          requires:
+            - docker/publish
           filters:
             branches:
               only:
