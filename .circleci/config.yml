@@ -144,10 +144,14 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install jq
+          command: apk add --no-cache jq httpie
+      - run:
           # recording the last existing cluster from the cache
           name: record current
           command: |
-            echo $(aws eks list-clusters | python3 -c "import sys, json; print(json.load(sys.stdin)['clusters'][0])") > previous-kubernetes.txt
+            echo "$(aws eks list-clusters | jq .clusters[0])"
+            echo "$(aws eks list-clusters | jq .clusters[0])" > previous-kubernetes.txt
             cat previous-kubernetes.txt
       #create the new cluster from our cluster yaml file
       - run:
@@ -178,8 +182,8 @@ jobs:
       - run:
           name: record service ip for smoke
           command: |
-            # echo "$(kubectl get services service-react-my-app --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > ip.txt
-            echo "$(kubectl -n kube-system get svc service-react-my-app -o json | jq -r .status.loadBalancer.ingress.hostname)" > ip.txt
+            echo "$(kubectl get services service-react-my-app -o json | jq -r .status.loadBalancer.ingress.hostname)" 
+            echo "$(kubectl get services service-react-my-app -o json | jq -r .status.loadBalancer.ingress.hostname)" > ip.txt
       - persist_to_workspace:
           root: /persistant-store
           paths:
