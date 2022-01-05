@@ -182,8 +182,8 @@ jobs:
       - run:
           name: record service ip for smoke
           command: |
-            echo "$(kubectl get services service-react-my-app -o json)"
-            echo "$(kubectl get services service-react-my-app -o json | jq -r '.status.loadBalancer.ingress[]')" 
+            #echo "$(kubectl get services service-react-my-app -o json)"
+            #echo "$(kubectl get services service-react-my-app -o json | jq -r '.status.loadBalancer.ingress[]')" 
             echo "$(kubectl get services service-react-my-app -o json | jq -r '.status.loadBalancer.ingress[].hostname')" > ip.txt
       - persist_to_workspace:
           root: /persistant-store
